@@ -27,6 +27,7 @@ type ServeMux struct {
 	outgoingHeaderMatcher  HeaderMatcherFunc
 	metadataAnnotator      func(context.Context, *http.Request) metadata.MD
 	protoErrorHandler      ProtoErrorHandlerFunc
+	streamHandler          StreamHandlerFunc
 }
 
 // ServeMuxOption is an option that can be given to a ServeMux on construction.
@@ -102,12 +103,19 @@ func WithProtoErrorHandler(fn ProtoErrorHandlerFunc) ServeMuxOption {
 	}
 }
 
+func WithStreamHandler(fn StreamHandlerFunc) ServeMuxOption {
+	return func(serveMux *ServeMux) {
+		serveMux.streamHandler = fn
+	}
+}
+
 // NewServeMux returns a new ServeMux whose internal mapping is empty.
 func NewServeMux(opts ...ServeMuxOption) *ServeMux {
 	serveMux := &ServeMux{
 		handlers:               make(map[string][]handler),
 		forwardResponseOptions: make([]func(context.Context, http.ResponseWriter, proto.Message) error, 0),
 		marshalers:             makeMarshalerMIMERegistry(),
+		streamHandler:          defaultStreamHandler,
 	}
 
 	for _, opt := range opts {
